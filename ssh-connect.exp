@@ -1,0 +1,72 @@
+#!/usr/bin/expect -f
+
+
+set force_conservative 1  
+if {$force_conservative} {
+        set send_slow {1 .001}
+        proc send {ignore arg} {
+        sleep .001
+                exp_send -s -- $arg
+        }
+}
+
+;# Validate user input - make sure all fields required are given 
+if {$argc >= 1} {
+    ;# Setting  password
+    set user "MYUSER";
+    set supass "MYPASSWORD"
+
+    set host [lindex $argv 0]
+  #     set command1 [lindex $argv 2]
+
+   set prompt "(:|#|%|>|\\\$|% |# |> |\\\$ )"
+   set prompt1 "(>)"
+   set timeout -1
+   ;###############################################################
+
+   ;#connect to specified host given by addstaff or globalstaff.
+   spawn ssh $user@$host
+   expect { 
+        "*word:*" {}
+        "*(yes/no)?*" {
+                      send - "yes\r" 
+                  expect "*word:" { }
+
+                  } 
+       }          
+
+   send  - "$supass\r"
+  expect eof exit -re $prompt
+
+   send -  "sudo bash\r"
+   expect   {
+                 "*word:*" {
+                         send  "$supass\r"
+                         expect  eof exit -re $prompt
+                 }
+        "*" {  
+              expect eof exit -re $prompt
+        }
+
+   }
+
+    send  - "whoami\r"
+        expect eof exit -re $prompt
+
+    interact 
+
+    ;#send  - "$command\r"
+    ;#  expect eof exit -re $prompt
+
+    ;#Logout of current ssh session
+    ;#send  - "exit\r"
+    ;#expect eof exit -re $prompt
+
+    ;#send  - "exit\r"
+    ;#expect eof exit -re $prompt
+
+
+} else {
+  send - "echo Sorry require user host command \n\n\r";
+  exit
+} 
